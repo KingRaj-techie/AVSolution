@@ -3,8 +3,7 @@ name: Build APK
   push:
     branches:
       - main
-  jobs: null
-  env: FORCE_JAVASCRIPT_ACTIONS_TO_NODE24=true
+  jobs: 
   build:
     runs-on: ubuntu-latest
     steps:
