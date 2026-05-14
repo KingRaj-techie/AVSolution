@@ -1,0 +1,288 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>AVSolv</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+  :root {
+    --blue: #3B6FFF; --purple: #8B5CF6; --dark: #0A0F2E;
+    --card: #0E1535; --border: rgba(255,255,255,0.08);
+    --text: #F1F5F9; --muted: #94A3B8; --dim: #475569;
+  }
+  html, body { height: 100%; background: var(--dark); font-family: 'Segoe UI', system-ui, sans-serif; overflow: hidden; }
+  #app { height: 100vh; display: flex; flex-direction: column; overflow: hidden; }
+
+  /* STATUS BAR */
+  .status-bar { background: var(--dark); padding: 8px 20px 4px; display: flex; justify-content: space-between; align-items: center; flex-shrink: 0; }
+  .status-bar span { color: #fff; font-size: 12px; }
+
+  /* SCREEN */
+  .screen { flex: 1; overflow-y: auto; display: flex; flex-direction: column; }
+
+  /* ---- SPLASH ---- */
+  #splash { background: linear-gradient(180deg, #0E1535 0%, #07091a 100%); align-items: center; justify-content: center; padding: 32px 24px; gap: 24px; }
+  .app-icon { width: 100px; height: 100px; border-radius: 28px; background: linear-gradient(135deg, #3B6FFF, #8B5CF6); display: flex; align-items: center; justify-content: center; font-size: 50px; box-shadow: 0 0 40px rgba(59,111,255,0.4); }
+  .app-title { font-size: 40px; font-weight: 900; background: linear-gradient(90deg, #60A5FA, #A78BFA, #F472B6); -webkit-background-clip: text; -webkit-text-fill-color: transparent; letter-spacing: -1px; }
+  .app-sub { color: var(--muted); font-size: 13px; margin-top: 4px; letter-spacing: 0.5px; text-align: center; }
+  .info-card { background: rgba(255,255,255,0.04); border: 1px solid var(--border); border-radius: 16px; padding: 18px; width: 100%; text-align: center; color: #CBD5E1; font-size: 13px; line-height: 1.8; }
+  .info-card span { color: #60A5FA; font-weight: 600; }
+  .stages-row { display: flex; gap: 12px; justify-content: center; }
+  .stage-chip { background: rgba(255,255,255,0.04); border: 1px solid var(--border); border-radius: 10px; padding: 10px 14px; text-align: center; }
+  .stage-chip .icon { font-size: 20px; }
+  .stage-chip .label { color: var(--muted); font-size: 10px; margin-top: 3px; }
+  .stage-chip .weight { color: #60A5FA; font-size: 9px; margin-top: 1px; }
+  .btn-primary { background: linear-gradient(135deg, #3B6FFF, #8B5CF6); color: #fff; border: none; border-radius: 16px; padding: 16px; font-size: 16px; font-weight: 700; cursor: pointer; box-shadow: 0 8px 24px rgba(59,111,255,0.35); width: 100%; max-width: 300px; letter-spacing: 0.5px; transition: transform 0.1s; }
+  .btn-primary:active { transform: scale(0.97); }
+  .footer-note { color: var(--dim); font-size: 11px; }
+
+  /* ---- QUESTION ---- */
+  #question { }
+  .q-header { padding: 16px 20px; border-bottom: 1px solid var(--border); flex-shrink: 0; }
+  .q-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+  .stage-badge { border-radius: 8px; padding: 4px 10px; font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: 1px; color: #CBD5E1; }
+  .progress-dots { display: flex; gap: 6px; }
+  .dot { width: 24px; height: 4px; border-radius: 2px; background: rgba(255,255,255,0.1); transition: background 0.3s; }
+  .dot.active { background: #60A5FA; }
+  .stage-label { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 1px; color: #60A5FA; margin-bottom: 4px; }
+  .q-text { color: var(--text); font-size: 17px; font-weight: 700; line-height: 1.3; }
+  .options-list { flex: 1; overflow-y: auto; padding: 12px 16px; display: flex; flex-direction: column; gap: 8px; }
+  .option-btn { background: rgba(255,255,255,0.04); border: 1px solid var(--border); border-radius: 14px; padding: 12px 14px; cursor: pointer; text-align: left; display: flex; align-items: center; gap: 12px; transition: all 0.2s; width: 100%; }
+  .option-btn:active { transform: scale(0.98); }
+  .option-btn.selected { border-color: var(--accent, #3B6FFF); background: rgba(59,111,255,0.12); }
+  .opt-icon { width: 38px; height: 38px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 20px; flex-shrink: 0; }
+  .opt-body { flex: 1; min-width: 0; }
+  .opt-title { color: var(--text); font-size: 12px; font-weight: 600; line-height: 1.4; margin-bottom: 2px; }
+  .opt-sub { color: #64748B; font-size: 10px; }
+  .opt-check { color: var(--accent, #3B6FFF); font-size: 18px; flex-shrink: 0; }
+
+  /* ---- RESULT ---- */
+  #result { padding: 0; }
+  .result-header { padding: 20px 20px 0; text-align: center; }
+  .result-label { color: #64748B; font-size: 11px; text-transform: uppercase; letter-spacing: 2px; margin-bottom: 8px; }
+  .result-card { border-radius: 20px; padding: 20px; margin: 0 0 16px; }
+  .result-icon { font-size: 48px; margin-bottom: 6px; }
+  .result-scenario { color: var(--muted); font-size: 12px; margin-bottom: 4px; }
+  .result-name { color: #fff; font-size: 22px; font-weight: 800; letter-spacing: -0.5px; margin-bottom: 4px; }
+  .result-desc { color: var(--muted); font-size: 12px; line-height: 1.5; }
+  .fit-bar-row { margin-top: 12px; display: flex; align-items: center; gap: 8px; }
+  .fit-bar-track { flex: 1; height: 6px; background: rgba(255,255,255,0.1); border-radius: 3px; overflow: hidden; }
+  .fit-bar-fill { height: 100%; border-radius: 3px; }
+  .fit-pct { font-weight: 700; font-size: 13px; }
+
+  .section-title { color: var(--dim); font-size: 11px; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 10px; }
+  .recap-section { padding: 0 16px; margin-bottom: 16px; }
+  .recap-item { display: flex; gap: 10px; align-items: flex-start; margin-bottom: 8px; }
+  .recap-num { width: 24px; height: 24px; border-radius: 6px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; font-size: 11px; font-weight: 700; color: #CBD5E1; }
+  .recap-body { flex: 1; }
+  .recap-stage { color: #64748B; font-size: 10px; margin-bottom: 2px; }
+  .recap-ans { color: #CBD5E1; font-size: 12px; font-weight: 500; }
+  .recap-weight { color: #60A5FA; font-size: 10px; font-weight: 600; }
+
+  .toggle-btn { background: rgba(255,255,255,0.04); border: 1px solid var(--border); border-radius: 10px; padding: 10px 14px; width: 100%; color: var(--muted); font-size: 12px; cursor: pointer; display: flex; justify-content: space-between; align-items: center; }
+  .scores-list { margin-top: 8px; display: flex; flex-direction: column; gap: 6px; }
+  .score-row { display: flex; align-items: center; gap: 8px; }
+  .score-icon { font-size: 14px; }
+  .score-body { flex: 1; }
+  .score-meta { display: flex; justify-content: space-between; margin-bottom: 3px; }
+  .score-name { color: var(--muted); font-size: 10px; }
+  .score-val { font-size: 10px; font-weight: 600; }
+  .score-track { height: 4px; background: rgba(255,255,255,0.08); border-radius: 2px; overflow: hidden; }
+  .score-fill { height: 100%; border-radius: 2px; }
+
+  .btn-secondary { width: 100%; background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.1); border-radius: 14px; padding: 14px; color: #CBD5E1; font-size: 14px; font-weight: 600; cursor: pointer; transition: transform 0.1s; }
+  .btn-secondary:active { transform: scale(0.98); }
+
+  @keyframes slideUp { from { opacity:0; transform:translateY(16px); } to { opacity:1; transform:translateY(0); } }
+  .animate { animation: slideUp 0.3s ease both; }
+</style>
+</head>
+<body>
+<div id="app">
+  <div class="status-bar">
+    <span id="clock">9:41</span>
+    <span>📶 🔋</span>
+  </div>
+  <div class="screen" id="splash">
+    <div class="app-icon">🧩</div>
+    <div style="text-align:center">
+      <div class="app-title">AVSolv</div>
+      <div class="app-sub">Business Transformation Trivia</div>
+    </div>
+    <div class="info-card">
+      Answer 3 stages of questions. Our engine analyzes your responses and maps you to the <span>best-fit solution</span>.
+    </div>
+    <div class="stages-row">
+      <div class="stage-chip"><div class="icon">🏢</div><div class="label">Pain Point</div><div class="weight">Weight ×1</div></div>
+      <div class="stage-chip"><div class="icon">⚡</div><div class="label">Operations</div><div class="weight">Weight ×2</div></div>
+      <div class="stage-chip"><div class="icon">💡</div><div class="label">Technology</div><div class="weight">Weight ×3</div></div>
+    </div>
+    <button class="btn-primary" onclick="startJourney()">Start Journey →</button>
+    <div class="footer-note">7 Scenarios • 3 Stages • 1 Solution</div>
+  </div>
+  <div class="screen" id="question" style="display:none"></div>
+  <div class="screen" id="result" style="display:none"></div>
+</div>
+
+<script>
+const SCENARIOS = [
+  { id:'resilience', name:'Resilience', icon:'🛡️', color:'#3B82F6',
+    pain:'Operational resilience', op:'Real-time coordination & resource management',
+    tech:'Lack of real-time visibility and geospatial intelligence',
+    sol:'SafetyNet', solDesc:'AI-enabled Disaster Management Platform' },
+  { id:'intelligent_ops', name:'Intelligent Operations', icon:'⚙️', color:'#8B5CF6',
+    pain:'Faster decision-making', op:'Document-heavy workflows and information retrieval',
+    tech:'Lack of AI automation for unstructured documents',
+    sol:'InsightX', solDesc:'Agentic AI – Document Intelligence Platform' },
+  { id:'compliance', name:'Compliance', icon:'📋', color:'#10B981',
+    pain:'Regulatory compliance', op:'AML/KYC reviews and compliance operations',
+    tech:'Manual workflows and lack of orchestrated compliance tech',
+    sol:'Adept-AutoAML', solDesc:'Automated AML Review Solution on Pega' },
+  { id:'field_service', name:'Field Service', icon:'🔧', color:'#F59E0B',
+    pain:'Customer experience', op:'Field workforce scheduling and service execution',
+    tech:'Lack of intelligent field service automation',
+    sol:'ZuperField', solDesc:'AI-Powered Field Service Management Platform' },
+  { id:'onboarding', name:'Onboarding', icon:'🪪', color:'#EC4899',
+    pain:'Workforce productivity', op:'Related-party identification and data collection',
+    tech:'Lack of AI-driven data discovery and external data linkage',
+    sol:'SmartOrganogram', solDesc:'AI-Powered Related Party Automation Platform' },
+  { id:'legacy', name:'Legacy Modernization', icon:'☁️', color:'#6366F1',
+    pain:'Digital transformation', op:'Maintaining legacy systems and slow modernization',
+    tech:'Legacy architecture and lack of modernization tools',
+    sol:'AdeptRecodeAI', solDesc:'AI-Powered Legacy Modernization Platform' },
+  { id:'digital_lending', name:'Digital Lending', icon:'💳', color:'#14B8A6',
+    pain:'Financial inclusion', op:'Loan onboarding, underwriting and collections',
+    tech:'Traditional credit models and lack of intelligent automation',
+    sol:'Micro-Loans Super App', solDesc:'AI-Powered Microfinance Lending Platform' }
+];
+
+const STAGES = [
+  { label:'Business Pain Point', key:'pain', weight:1, q:'Where is the pressure highest in your organization?', stageBg:'rgba(30,58,138,0.25)', stageAccent:'#3B82F6' },
+  { label:'Operational Challenge', key:'op', weight:2, q:'Where do your operations break down?', stageBg:'rgba(22,101,52,0.25)', stageAccent:'#22C55E' },
+  { label:'Technology Bottleneck', key:'tech', weight:3, q:'What technology gap is slowing you down?', stageBg:'rgba(154,52,18,0.25)', stageAccent:'#F97316' }
+];
+
+let currentStage = 0;
+let answers = [];
+let showScores = false;
+
+function updateClock() {
+  const now = new Date();
+  document.getElementById('clock').textContent = now.getHours().toString().padStart(2,'0') + ':' + now.getMinutes().toString().padStart(2,'0');
+}
+updateClock(); setInterval(updateClock, 30000);
+
+function show(id) {
+  ['splash','question','result'].forEach(s => document.getElementById(s).style.display = s===id ? 'flex' : 'none');
+  document.getElementById(id).style.flexDirection = 'column';
+}
+
+function startJourney() { currentStage = 0; answers = []; renderQuestion(); show('question'); }
+
+function renderQuestion() {
+  const st = STAGES[currentStage];
+  const q = document.getElementById('question');
+  const dots = [0,1,2].map(i => `<div class="dot${i<=currentStage?' active':''}"></div>`).join('');
+  const opts = SCENARIOS.map((sc,i) => `
+    <button class="option-btn animate" style="animation-delay:${i*0.04}s" onclick="selectAnswer('${sc.id}')">
+      <div class="opt-icon" style="background:${sc.color}20">${sc.icon}</div>
+      <div class="opt-body">
+        <div class="opt-title">${sc[st.key]}</div>
+        <div class="opt-sub">${sc.name}</div>
+      </div>
+    </button>`).join('');
+  q.innerHTML = `
+    <div class="q-header" style="background:${st.stageBg}; border-bottom:1px solid ${st.stageAccent}30">
+      <div class="q-top">
+        <div class="stage-badge" style="background:${st.stageBg}; border:1px solid ${st.stageAccent}50">Stage ${currentStage+1}/3</div>
+        <div class="progress-dots">${dots}</div>
+      </div>
+      <div class="stage-label" style="color:${st.stageAccent}">${st.label} • Weight ×${st.weight}</div>
+      <div class="q-text">${st.q}</div>
+    </div>
+    <div class="options-list">${opts}</div>`;
+}
+
+function selectAnswer(id) {
+  const btn = document.querySelector(`[onclick="selectAnswer('${id}')"]`);
+  const sc = SCENARIOS.find(s=>s.id===id);
+  if(btn) { btn.classList.add('selected'); btn.style.setProperty('--accent', sc.color); btn.style.borderColor = sc.color; btn.style.background = sc.color+'18'; }
+  answers.push({ stage: currentStage, id });
+  setTimeout(() => {
+    currentStage++;
+    if(currentStage < 3) { renderQuestion(); } else { renderResult(); show('result'); }
+  }, 380);
+}
+
+function renderResult() {
+  const scores = {};
+  SCENARIOS.forEach(s => scores[s.id] = 0);
+  answers.forEach(a => { scores[a.id] += STAGES[a.stage].weight; });
+  const ranked = Object.entries(scores).sort((a,b)=>b[1]-a[1]);
+  const topId = ranked[0][0];
+  const top = SCENARIOS.find(s=>s.id===topId);
+  const maxScore = 6;
+  const pct = Math.round((ranked[0][1]/maxScore)*100);
+
+  const stageNames = ['Business Pain Point','Operational Challenge','Technology Bottleneck'];
+  const recap = answers.map((a,i)=>{
+    const sc = SCENARIOS.find(s=>s.id===a.id);
+    const key = STAGES[i].key;
+    return `<div class="recap-item">
+      <div class="recap-num" style="background:${i===0?'rgba(30,58,138,0.5)':i===1?'rgba(22,101,52,0.5)':'rgba(154,52,18,0.5)'}">${i+1}</div>
+      <div class="recap-body">
+        <div class="recap-stage">${stageNames[i]}</div>
+        <div class="recap-ans">${sc[STAGES[i].key]}</div>
+      </div>
+      <div class="recap-weight">+${STAGES[i].weight}</div>
+    </div>`;
+  }).join('');
+
+  const scoresHtml = ranked.map(([id,score])=>{
+    const sc = SCENARIOS.find(s=>s.id===id);
+    return `<div class="score-row">
+      <div class="score-icon">${sc.icon}</div>
+      <div class="score-body">
+        <div class="score-meta"><span class="score-name">${sc.sol}</span><span class="score-val" style="color:${sc.color}">${score}/${maxScore}</span></div>
+        <div class="score-track"><div class="score-fill" style="width:${(score/maxScore)*100}%;background:${sc.color}"></div></div>
+      </div>
+    </div>`;
+  }).join('');
+
+  document.getElementById('result').innerHTML = `
+    <div class="result-header">
+      <div class="result-label">Your Transformation Profile</div>
+      <div class="result-card" style="background:linear-gradient(135deg,${top.color}20,${top.color}0c);border:1px solid ${top.color}50;margin:0 0 16px">
+        <div class="result-icon">${top.icon}</div>
+        <div class="result-scenario">${top.name} Scenario</div>
+        <div class="result-name">${top.sol}</div>
+        <div class="result-desc">${top.solDesc}</div>
+        <div class="fit-bar-row">
+          <div class="fit-bar-track"><div class="fit-bar-fill" style="width:${pct}%;background:linear-gradient(90deg,${top.color},${top.color}99)"></div></div>
+          <span class="fit-pct" style="color:${top.color}">${pct}% fit</span>
+        </div>
+      </div>
+    </div>
+    <div class="recap-section">
+      <div class="section-title">Your Answers</div>
+      ${recap}
+    </div>
+    <div class="recap-section">
+      <button class="toggle-btn" onclick="toggleScores()">All Scenario Scores <span id="toggle-arrow">▼</span></button>
+      <div class="scores-list" id="scores-list" style="display:none">${scoresHtml}</div>
+    </div>
+    <div class="recap-section" style="padding-bottom:32px">
+      <button class="btn-secondary" onclick="startJourney()">↩ Retake Journey</button>
+    </div>`;
+}
+
+function toggleScores() {
+  showScores = !showScores;
+  document.getElementById('scores-list').style.display = showScores ? 'flex' : 'none';
+  document.getElementById('scores-list').style.flexDirection = 'column';
+  document.getElementById('toggle-arrow').textContent = showScores ? '▲' : '▼';
+}
+</script>
+</body>
+</html>
