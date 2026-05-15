@@ -5,7 +5,7 @@ name: Build APK
       - main
 jobs:
   build:
-    runs-on: windows-latest
+    runs-on: ubuntu-latest
     steps:
       - uses: actions/setup-node@v4
       - uses: actions/checkout@v4
