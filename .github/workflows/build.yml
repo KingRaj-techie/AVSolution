@@ -15,7 +15,8 @@ jobs:
           distribution: temurin
       - name: Build APK
         run: |
-         .\gradlew
+        chmod +x gradlew
+          ./gradlew assembleDebug
       - uses: actions/upload-artifact@v4
         with:
           name: AVSolv-APK
