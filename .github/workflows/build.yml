@@ -15,8 +15,7 @@ jobs:
           distribution: temurin
       - name: Build APK
         run: |
-          chmod +x gradlew
-          ./gradlew assembleDebug
+           gradlew.bat assembleDebug
       - uses: actions/upload-artifact@v4
         with:
           name: AVTriviaSoln-APK
